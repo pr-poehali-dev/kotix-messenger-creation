@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
 
 interface Chat {
   id: number;
@@ -14,6 +16,7 @@ interface Chat {
   time: string;
   unread: number;
   online: boolean;
+  phone?: string;
 }
 
 interface Message {
@@ -24,7 +27,7 @@ interface Message {
   encrypted: boolean;
 }
 
-const mockChats: Chat[] = [
+const initialChats: Chat[] = [
   {
     id: 1,
     name: 'Анна Петрова',
@@ -32,7 +35,8 @@ const mockChats: Chat[] = [
     lastMessage: 'Привет! Как дела?',
     time: '14:23',
     unread: 2,
-    online: true
+    online: true,
+    phone: '+7 (916) 123-45-67'
   },
   {
     id: 2,
@@ -41,7 +45,8 @@ const mockChats: Chat[] = [
     lastMessage: 'Спасибо за обращение!',
     time: '13:45',
     unread: 0,
-    online: false
+    online: false,
+    phone: '+7 (800) 555-35-35'
   },
   {
     id: 3,
@@ -50,7 +55,8 @@ const mockChats: Chat[] = [
     lastMessage: 'Новый макет готов',
     time: '12:10',
     unread: 5,
-    online: true
+    online: true,
+    phone: '+7 (495) 777-88-99'
   },
   {
     id: 4,
@@ -59,7 +65,8 @@ const mockChats: Chat[] = [
     lastMessage: 'Не забудь позвонить',
     time: 'Вчера',
     unread: 0,
-    online: false
+    online: false,
+    phone: '+7 (903) 555-12-34'
   }
 ];
 
@@ -95,10 +102,14 @@ const mockMessages: Message[] = [
 ];
 
 function Index() {
-  const [activeChat, setActiveChat] = useState<Chat | null>(mockChats[0]);
+  const [chats, setChats] = useState<Chat[]>(initialChats);
+  const [activeChat, setActiveChat] = useState<Chat | null>(initialChats[0]);
   const [activeSection, setActiveSection] = useState('chats');
   const [messageText, setMessageText] = useState('');
   const [messages, setMessages] = useState<Message[]>(mockMessages);
+  const [isAddContactOpen, setIsAddContactOpen] = useState(false);
+  const [newContactPhone, setNewContactPhone] = useState('');
+  const [newContactName, setNewContactName] = useState('');
 
   const navigationItems = [
     { id: 'chats', icon: 'MessageSquare', label: 'Чаты' },
@@ -122,6 +133,28 @@ function Index() {
 
     setMessages([...messages, newMessage]);
     setMessageText('');
+  };
+
+  const handleAddContact = () => {
+    if (!newContactPhone.trim() || !newContactName.trim()) return;
+
+    const newChat: Chat = {
+      id: chats.length + 1,
+      name: newContactName,
+      avatar: '',
+      lastMessage: '',
+      time: 'Сейчас',
+      unread: 0,
+      online: false,
+      phone: newContactPhone
+    };
+
+    setChats([newChat, ...chats]);
+    setActiveChat(newChat);
+    setMessages([]);
+    setNewContactPhone('');
+    setNewContactName('');
+    setIsAddContactOpen(false);
   };
 
   return (
@@ -154,7 +187,7 @@ function Index() {
       </aside>
 
       <div className="w-96 bg-card border-r border-border flex flex-col">
-        <div className="p-4 border-b border-border">
+        <div className="p-4 border-b border-border space-y-3">
           <div className="relative">
             <Icon name="Search" size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <Input
@@ -162,11 +195,52 @@ function Index() {
               className="pl-10 bg-muted/30 border-muted"
             />
           </div>
+          
+          <Dialog open={isAddContactOpen} onOpenChange={setIsAddContactOpen}>
+            <DialogTrigger asChild>
+              <Button className="w-full bg-gradient-to-r from-primary to-secondary hover:opacity-90">
+                <Icon name="UserPlus" size={18} className="mr-2" />
+                Добавить контакт
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle>Добавить контакт</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <Label htmlFor="phone">Номер телефона</Label>
+                  <Input
+                    id="phone"
+                    placeholder="+7 (999) 123-45-67"
+                    value={newContactPhone}
+                    onChange={(e) => setNewContactPhone(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="name">Имя контакта</Label>
+                  <Input
+                    id="name"
+                    placeholder="Имя Фамилия"
+                    value={newContactName}
+                    onChange={(e) => setNewContactName(e.target.value)}
+                  />
+                </div>
+                <Button 
+                  onClick={handleAddContact}
+                  className="w-full bg-gradient-to-r from-primary to-secondary hover:opacity-90"
+                >
+                  <Icon name="Check" size={18} className="mr-2" />
+                  Добавить
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
         </div>
 
         <ScrollArea className="flex-1">
           <div className="p-2">
-            {mockChats.map((chat) => (
+            {chats.map((chat) => (
               <button
                 key={chat.id}
                 onClick={() => setActiveChat(chat)}
