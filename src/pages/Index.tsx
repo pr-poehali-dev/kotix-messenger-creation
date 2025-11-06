@@ -7,6 +7,10 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Switch } from '@/components/ui/switch';
 
 interface Chat {
   id: number;
@@ -21,10 +25,14 @@ interface Chat {
 
 interface Message {
   id: number;
-  text: string;
+  text?: string;
   time: string;
   isMine: boolean;
   encrypted: boolean;
+  type?: 'text' | 'sticker' | 'gift' | 'file';
+  sticker?: string;
+  fileName?: string;
+  fileSize?: string;
 }
 
 const initialChats: Chat[] = [
@@ -110,6 +118,13 @@ function Index() {
   const [isAddContactOpen, setIsAddContactOpen] = useState(false);
   const [newContactPhone, setNewContactPhone] = useState('');
   const [newContactName, setNewContactName] = useState('');
+  const [isPremium, setIsPremium] = useState(true);
+  const [showStickers, setShowStickers] = useState(false);
+  const [showGifts, setShowGifts] = useState(false);
+  const [userName, setUserName] = useState('Александр Космонавтов');
+  const [userPhone, setUserPhone] = useState('+7 (999) 888-77-66');
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   const navigationItems = [
     { id: 'chats', icon: 'MessageSquare', label: 'Чаты' },
@@ -157,12 +172,108 @@ function Index() {
     setIsAddContactOpen(false);
   };
 
+  const handleSendSticker = (sticker: string) => {
+    const newMessage: Message = {
+      id: messages.length + 1,
+      time: new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }),
+      isMine: true,
+      encrypted: true,
+      type: 'sticker',
+      sticker
+    };
+    setMessages([...messages, newMessage]);
+    setShowStickers(false);
+  };
+
+  const handleSendGift = (gift: string) => {
+    const newMessage: Message = {
+      id: messages.length + 1,
+      time: new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }),
+      isMine: true,
+      encrypted: true,
+      type: 'gift',
+      sticker: gift
+    };
+    setMessages([...messages, newMessage]);
+    setShowGifts(false);
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    const newMessage: Message = {
+      id: messages.length + 1,
+      time: new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }),
+      isMine: true,
+      encrypted: true,
+      type: 'file',
+      fileName: file.name,
+      fileSize: (file.size / 1024).toFixed(1) + ' KB'
+    };
+    setMessages([...messages, newMessage]);
+  };
+
+  const stickers = ['🎨', '🚀', '⭐', '💎', '🔥', '💜', '✨', '🌟', '🎯', '🎪', '🎭', '🎬'];
+  const gifts = ['🎁', '💝', '🌹', '🍰', '🎂', '🏆', '👑', '💍', '🌺', '🎉', '🎊', '🎈'];
+
   return (
     <div className="flex h-screen bg-background dark">
       <aside className="w-20 bg-sidebar border-r border-sidebar-border flex flex-col items-center py-6 gap-6">
-        <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white font-bold text-xl">
-          K
-        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white font-bold text-xl hover:scale-105 transition-transform relative">
+              K
+              {isPremium && (
+                <div className="absolute -top-1 -right-1 w-4 h-4 bg-yellow-400 rounded-full flex items-center justify-center text-xs">
+                  ⭐
+                </div>
+              )}
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent side="right" className="w-56 ml-2">
+            <DropdownMenuLabel className="flex items-center gap-2">
+              <Avatar className="w-8 h-8">
+                <AvatarFallback className="bg-gradient-to-br from-primary to-secondary text-white text-xs">
+                  {userName.split(' ').map(n => n[0]).join('')}
+                </AvatarFallback>
+              </Avatar>
+              <div>
+                <div className="font-medium text-sm">{userName}</div>
+                <div className="text-xs text-muted-foreground">{userPhone}</div>
+              </div>
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => setIsProfileOpen(true)}>
+              <Icon name="User" size={16} className="mr-2" />
+              Мой профиль
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setIsSettingsOpen(true)}>
+              <Icon name="Settings" size={16} className="mr-2" />
+              Настройки
+            </DropdownMenuItem>
+            {isPremium && (
+              <DropdownMenuItem className="text-yellow-500">
+                <Icon name="Star" size={16} className="mr-2" />
+                KOTIX Premium
+              </DropdownMenuItem>
+            )}
+            <DropdownMenuSeparator />
+            <DropdownMenuItem>
+              <Icon name="UserPlus" size={16} className="mr-2" />
+              Добавить аккаунт
+            </DropdownMenuItem>
+            <DropdownMenuItem>
+              <Icon name="RefreshCw" size={16} className="mr-2" />
+              Сменить аккаунт
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem className="text-destructive">
+              <Icon name="LogOut" size={16} className="mr-2" />
+              Выйти
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
 
         <nav className="flex-1 flex flex-col gap-4">
           {navigationItems.map((item) => (
